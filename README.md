@@ -2,6 +2,7 @@
 
 ## Description 
 "logcheck" is a script that helps you quickly extract desired keywords from log files to reduce log analysis time.
+
 it analyses log files according to the keywords you specify, extracts only relevant lines and provides you with the result.
 
 ## Key Features
