@@ -18,3 +18,6 @@ Clone or download the source code from the GitHub repository.
 
 ```bash
 git clone https://github.com/yourusername/logcheck.git
+
+## Example
+logcheck -f [keywords file]
