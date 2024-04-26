@@ -1,0 +1,25 @@
+# 로그 파일 이름 입력 받기
+read -p "Enter log file name: " logname
+
+# 결과 파일 이름 입력 받기
+read -p "Enter output file name for saved results: " savename
+
+# 추가할 키워드 개수 입력 받기
+read -p "Enter the number of additional keywords: " num_keywords
+
+# 기본 키워드
+keywords="err|warn|fail|fatal|panic|denied|critical"
+
+# 사용자로부터 키워드 개수만큼 입력받기
+for ((i=1; i<=num_keywords; i++))
+do
+    read -p "Enter keyword $i: " keyword
+    keywords="$keywords|$keyword"
+done
+
+# grep으로 로그 파일 분석하고 결과를 파일에 저장
+grep -inE "$keywords" "$logname" | \
+awk '{print " Alert found: "$0 }' > "$savename"
+
+echo "Analysis completed. Results are saved in $savename."
+
