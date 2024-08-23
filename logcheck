@@ -1,0 +1,45 @@
+# 로그 파일 이름 입력 받기
+read -p "Enter log file name: " logname
+
+# 결과 파일 이름 입력 받기
+read -p "Enter output file name for saved results: " savename
+
+# 기본 키워드
+keywords="err|warn|fail|fatal|panic|denied|critical"
+
+# 명령줄 옵션 처리 (-f 옵션으로 키워드 파일 지정)
+while getopts "f:" opt; do
+    case "$opt" in
+        f)  # 키워드 파일에서 키워드 읽기
+            if [[ -f $OPTARG ]]; then
+                file_keywords=$(tr '\n' '|' < "$OPTARG")
+                file_keywords=${file_keywords%|}  # 마지막 '|' 제거
+                keywords="$keywords|$file_keywords"
+            else
+                echo "Specified keyword file not found."
+                exit 1
+            fi
+            ;;
+        \?)
+            echo "Invalid option: -$OPTARG" >&2
+            exit 1
+            ;;
+    esac
+done
+
+# 추가할 키워드 개수 입력 받기
+read -p "Enter the number of additional keywords: " num_keywords
+
+# 사용자로부터 키워드 개수만큼 입력받기
+for ((i=1; i<=num_keywords; i++))
+do
+    read -p "Enter keyword $i: " keyword
+    keywords="$keywords|$keyword"
+done
+
+# grep으로 로그 파일 분석하고 결과를 파일에 저장
+grep -inE "$keywords" "$logname" | \
+awk '{print " Alert found: "$0 }' > "$savename"
+
+echo "Analysis completed. Results are saved in $savename."
+
