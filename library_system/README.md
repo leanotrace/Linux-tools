@@ -50,7 +50,7 @@ CREATE TABLE users (
 4. Grant permissions
 GRANT ALL PRIVILEGES ON TABLE books to user;
 
-if you want to add books. do below
+**if you want to add books. do below**
 GRANT ALL PRIVILEGES ON SEQUENCE books_id_seq TO user;
 
 5. Run the program:
