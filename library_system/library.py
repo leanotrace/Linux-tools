@@ -274,21 +274,24 @@ class LibraryGUI:
 
 
     def return_book(self):
-        """대여한 책 반납 메서드"""
         selected_idx = self.borrowed_books_listbox.curselection()
         if not selected_idx:
             messagebox.showwarning("경고", "반납할 책을 선택하세요.")
             return
 
-        title = clean_title(self.borrowed_books_listbox.get(selected_idx))
-        result = self.library.return_book(title, self.user_name)
+        title_with_info = self.borrowed_books_listbox.get(selected_idx)
+        title = clean_title(title_with_info)  # 제목에서 괄호 제거 후 비교
 
-        if "반납되었습니다" in result:
-            self.borrowed_books.remove(title)
-            self.update_borrowed_books_listbox()
-
-        messagebox.showinfo("반납 결과", result)
-        self.update_books_listbox()
+        # borrowed_books 리스트에서 책이 존재하는지 확인 후 제거
+        if title in self.borrowed_books:
+            result = self.library.return_book(title, self.user_name)
+            if "반납되었습니다" in result:
+                self.borrowed_books.remove(title)
+                self.update_borrowed_books_listbox()
+            messagebox.showinfo("반납 결과", result)
+            self.update_books_listbox()
+        else:
+            messagebox.showerror("오류", f"'{title}' 책은 대여한 목록에 없습니다.")
         
 # 로그인 창 클래스
 class LoginGUI:
