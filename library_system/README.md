@@ -7,15 +7,15 @@ The system offers an intuitive GUI, allowing users to easily track the rental st
 
 
 ## Key Features
-1. Book Borrowing and Returning: After user authentication, users can borrow and return books. Books that are currently borrowed cannot be rented by others until they are returned.
+1. **Book Borrowing and Returning**: After user authentication, users can borrow and return books. Books that are currently borrowed cannot be rented by others until they are returned.
 
-2. Adding and Removing Books: Administrators can add new books or remove existing ones. The system checks for duplicate entries by verifying the book's title and ISBN before adding it to the library.
+2. **Adding and Removing Books**: Administrators can add new books or remove existing ones. The system checks for duplicate entries by verifying the book's title and ISBN before adding it to the library.
 
-3. Real-Time Book Status Updates: The system syncs with the database every 5 seconds to ensure that the book list is up-to-date. This feature allows other users to see the latest status of borrowed/returned books.
+3. **Real-Time Book Status Updates**: The system syncs with the database every 5 seconds to ensure that the book list is up-to-date. This feature allows other users to see the latest status of borrowed/returned books.
 
-4. User-Specific Rental History: Each user can view their own rental history, which is updated in real-time based on the user's borrowing and returning actions.
+4. **User-Specific Rental History**: Each user can view their own rental history, which is updated in real-time based on the user's borrowing and returning actions.
 
-5. Search Functionality: Users can search for books by title or ISBN, and filter to display only available books.
+5. **Search Functionality**: Users can search for books by title or ISBN, and filter to display only available books.
 
 # Requirements
 - Python 3.x later
@@ -23,17 +23,15 @@ The system offers an intuitive GUI, allowing users to easily track the rental st
 
 ## Installation
 
-1. Clone or download the source code:
 ```bash
+1. Clone or download the source code:
 git clone https://github.com/yourusername/LibrarySystem.git
 
 2. Install the required Python packages:
-```bash
 pip install -r requirements.txt
 
 3. Set up the PostgreSQL database and create the necessary tables:
 
-```bash
 CREATE TABLE books (
     id SERIAL PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
@@ -50,5 +48,4 @@ CREATE TABLE users (
 );
 
 4. Run the program:
-```bash
 python3 library.py
