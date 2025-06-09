@@ -49,7 +49,6 @@ def save_cache(updates):
         pickle.dump({'time': datetime.now(), 'updates': updates}, f)
 
 def check_updated_versions(selected_packages):
-    
     updated_list = []
     try:
         # 패키지의 최신 버전 확인
@@ -106,8 +105,41 @@ def send_email_notification(subject, message):#
     except Exception as e:
         write_log(f"이메일 전송 중 오류 발생: {e}")
 
+def get_dnf_transaction_info(selected_packages):
+    """
+    dnf update --assumeno로 실제 업데이트 전 설치/업데이트/다운로드될 패키지 및 의존성 목록을 미리 확인한다.
+    """
+    try:
+        result = subprocess.run(
+            ['dnf', '-y', 'update', '--assumeno'] + selected_packages,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True
+        )
+        if result.returncode in (0, 1):
+            lines = result.stdout.splitlines()
+            relevant_lines = []
+            capture = False
+            for line in lines:
+                if any(line.strip().startswith(word) for word in ["Upgrading:", "Installing:", "Removing:", "Downgrading:"]):
+                    capture = True
+                    relevant_lines.append(line)
+                    continue
+                if capture:
+                    # 빈 줄이나 Transaction Summary에서 멈춤
+                    if not line.strip() or line.strip().startswith("Transaction Summary"):
+                        break
+                    relevant_lines.append(line)
+            return "\n".join(relevant_lines).strip() if relevant_lines else "(의존성 정보 없음)"
+        else:
+            return f"(의존성 정보 파싱 실패: {result.stderr.strip()})"
+    except Exception as e:
+        return f"(의존성 정보 파싱 중 오류: {e})"
+
 def prompt_user_for_updates(update_list):
-    """사용자에게 업데이트할 패키지를 선택하도록 요청합니다."""
+    """사용자에게 업데이트할 패키지를 선택하도록 요청합니다.
+    선택한 패키지의 의존성까지 실제로 어떤 패키지가 다운/업데이트되는지 미리 보여준다.
+    """
     print("\n다음 패키지들이 업데이트 가능합니다:")
     for idx, (pkg, ver) in enumerate(update_list):
         print(f"{idx + 1}. {pkg} -> {ver}")
@@ -116,11 +148,26 @@ def prompt_user_for_updates(update_list):
     selected_indices = [int(i.strip()) - 1 for i in selected_indices.split(",")]
 
     selected_packages = [update_list[i][0] for i in selected_indices if i < len(update_list)]
+
+    if selected_packages:
+        print("\n[의존성 및 실제로 설치/업데이트될 패키지 목록 미리보기]")
+        dep_info = get_dnf_transaction_info(selected_packages)
+        print(dep_info)
+        print("\n위 패키지 및 의존성까지 모두 업데이트됩니다.")
+        confirm = input("계속 진행하시겠습니까? (y/N): ").strip().lower()
+        if confirm != 'y':
+            print("업데이트가 취소되었습니다.")
+            write_log("사용자가 의존성 확인 후 업데이트를 취소함.")
+            return []
     return selected_packages
 
 def perform_updates(selected_packages):
     """선택한 패키지들을 업데이트합니다."""
     try:
+        # 업데이트 전 버전 정보 가져오기
+        before_versions = check_updated_versions(selected_packages)
+        before_dict = {pkg: ver for pkg, ver in before_versions}
+
         # 업데이트 실행
         result = subprocess.run(['dnf', '-y', 'update'] + selected_packages, stdout=subprocess.PIPE, universal_newlines=True)
         if result.returncode == 0:
@@ -131,7 +178,8 @@ def perform_updates(selected_packages):
             if updated_versions:
                 write_log("업데이트된 패키지 및 버전 정보:")
                 for pkg, ver in updated_versions:
-                    write_log(f"{pkg} -> {ver}")
+                    before_ver = before_dict.get(pkg, "알 수 없음")
+                    write_log(f"{pkg} {before_ver} -> {ver}")
         else:
             write_log("업데이트 중 오류가 발생했습니다:\n" + result.stderr)
     except Exception as e:
