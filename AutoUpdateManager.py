@@ -69,10 +69,9 @@ def check_updated_versions(selected_packages):
 def check_updates():
     """업데이트가 필요한 패키지를 확인하고 결과를 반환합니다."""
     try:
+        # dnf 메타데이터 강제 새로고침
+        subprocess.run(['dnf', 'makecache'], stdout=subprocess.PIPE, universal_newlines=True)
         print("업데이트 확인 중...")  # 디버그 출력 추가
-        
-        ## 파이썬 3.7보다 낮은 버전을 사용 중이라면, text=True 대신 universal_newlines=True를 사용
-        ## subprocess.run 결과는 기본적으로 바이너리 이므로 문자열로 변환해야함
         result = subprocess.run(['dnf', 'check-update'], stdout=subprocess.PIPE, universal_newlines=True)
         # print(f"dnf 명령 실행 결과 코드: {result.returncode}")  # 디버그 출력 추가
         
@@ -164,7 +163,6 @@ def prompt_user_for_updates(update_list):
 def perform_updates(selected_packages):
     """선택한 패키지들을 업데이트합니다."""
     try:
-        # 업데이트 전 버전 정보 가져오기
         before_versions = check_updated_versions(selected_packages)
         before_dict = {pkg: ver for pkg, ver in before_versions}
 
@@ -180,6 +178,20 @@ def perform_updates(selected_packages):
                 for pkg, ver in updated_versions:
                     before_ver = before_dict.get(pkg, "알 수 없음")
                     write_log(f"{pkg} {before_ver} -> {ver}")
+
+            # dnf 캐시 강제 새로고침
+            subprocess.run(['dnf', 'clean', 'all'], stdout=subprocess.PIPE, universal_newlines=True)
+            subprocess.run(['dnf', 'makecache'], stdout=subprocess.PIPE, universal_newlines=True)
+
+            # 업데이트 후 최신 패키지 목록으로 캐시 갱신
+            result = subprocess.run(['dnf', 'check-update'], stdout=subprocess.PIPE, universal_newlines=True)
+            if result.returncode == 100:
+                parsed_updates = parse_updates(result.stdout)
+                save_cache(parsed_updates)
+            else:
+                # 더 이상 업데이트가 없으면 캐시 삭제
+                if os.path.exists(CACHE_FILE):
+                    os.remove(CACHE_FILE)
         else:
             write_log("업데이트 중 오류가 발생했습니다:\n" + result.stderr)
     except Exception as e:
